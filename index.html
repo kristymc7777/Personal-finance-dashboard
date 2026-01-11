@@ -9,7 +9,7 @@
     <!-- Chart.js CDN for pie chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
+<body class="min-h-screen" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <!-- Header -->
         <header class="mb-8">
@@ -18,13 +18,13 @@
         </header>
 
         <!-- Total Spending Card -->
-        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+        <div class="rounded-lg shadow-xl p-6 mb-6 border" style="background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.5); backdrop-filter: blur(10px);">
             <h2 class="text-xl font-semibold mb-2 text-gray-300">Total Spending</h2>
             <p class="text-4xl font-bold text-blue-400" id="totalAmount">$0.00</p>
         </div>
 
         <!-- Pie Chart Section -->
-        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+        <div class="rounded-lg shadow-xl p-6 mb-6 border" style="background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.5); backdrop-filter: blur(10px);">
             <h2 class="text-xl font-semibold mb-4">Spending by Category</h2>
             <div class="flex justify-center">
                 <canvas id="categoryChart" style="max-width: 400px; max-height: 400px;"></canvas>
@@ -32,7 +32,7 @@
         </div>
 
         <!-- Input Form Section -->
-        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+        <div class="rounded-lg shadow-xl p-6 mb-6 border" style="background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.5); backdrop-filter: blur(10px);">
             <h2 class="text-xl font-semibold mb-4">Add New Expense</h2>
             <form id="expenseForm" class="space-y-4">
                 <!-- Expense Name Input -->
@@ -97,7 +97,7 @@
         </div>
 
         <!-- Expenses List Section -->
-        <div class="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
+        <div class="rounded-lg shadow-xl p-6 border" style="background: rgba(30, 41, 59, 0.8); border-color: rgba(51, 65, 85, 0.5); backdrop-filter: blur(10px);">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Expenses List</h2>
                 <button 
@@ -354,7 +354,8 @@
             expenses.forEach(expense => {
                 // Create a div element for each expense
                 const expenseCard = document.createElement('div');
-                expenseCard.className = 'bg-gray-700 rounded-lg p-4 border border-gray-600 flex justify-between items-center hover:bg-gray-650 transition duration-200';
+                expenseCard.className = 'rounded-lg p-4 border flex justify-between items-center transition duration-200 hover:shadow-lg';
+                expenseCard.style.cssText = 'background: rgba(51, 65, 85, 0.6); border-color: rgba(71, 85, 105, 0.4);';
                 
                 // Color code by category
                 const categoryColors = {
