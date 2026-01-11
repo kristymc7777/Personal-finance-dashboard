@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Dashboard</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for pie chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center mb-2">💰 Personal Finance Dashboard</h1>
+            <p class="text-center text-gray-400">Track your expenses and manage your budget</p>
+        </header>
+
+        <!-- Total Spending Card -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-2 text-gray-300">Total Spending</h2>
+            <p class="text-4xl font-bold text-blue-400" id="totalAmount">$0.00</p>
+        </div>
+
+        <!-- Pie Chart Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4">Spending by Category</h2>
+            <div class="flex justify-center">
+                <canvas id="categoryChart" style="max-width: 400px; max-height: 400px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Input Form Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4">Add New Expense</h2>
+            <form id="expenseForm" class="space-y-4">
+                <!-- Expense Name Input -->
+                <div>
+                    <label for="expenseName" class="block text-sm font-medium text-gray-300 mb-2">
+                        Expense Name
+                    </label>
+                    <input 
+                        type="text" 
+                        id="expenseName" 
+                        required
+                        placeholder="e.g., Groceries, Netflix Subscription"
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+                    >
+                </div>
+
+                <!-- Amount Input -->
+                <div>
+                    <label for="amount" class="block text-sm font-medium text-gray-300 mb-2">
+                        Amount ($)
+                    </label>
+                    <input 
+                        type="number" 
+                        id="amount" 
+                        required
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+                    >
+                </div>
+
+                <!-- Category Select -->
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-300 mb-2">
+                        Category
+                    </label>
+                    <select 
+                        id="category" 
+                        required
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    >
+                        <option value="">Select a category</option>
+                        <option value="Food">Food</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Tech">Tech</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                >
+                    Add Expense
+                </button>
+            </form>
+        </div>
+
+        <!-- Expenses List Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Expenses List</h2>
+                <button 
+                    id="clearAllBtn"
+                    class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    Clear All
+                </button>
+            </div>
+            
+            <!-- Expenses Container -->
+            <div id="expensesList" class="space-y-3">
+                <p class="text-gray-400 text-center py-8" id="emptyMessage">No expenses yet. Add your first expense above!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // DATA STORAGE & INITIALIZATION
+        // ============================================
+        
+        // Array to store all expenses in memory
+        let expenses = [];
+        
+        // Variable to store the Chart.js chart instance
+        let categoryChart = null;
+
+        // Function to load expenses from Local Storage when page loads
+        function loadExpenses() {
+            // Get data from Local Storage (browser's storage)
+            const storedExpenses = localStorage.getItem('expenses');
+            
+            // If data exists, parse it (convert from JSON string to array)
+            if (storedExpenses) {
+                expenses = JSON.parse(storedExpenses);
+            } else {
+                // If no data exists, add sample expenses for demonstration
+                const sampleExpenses = [
+                    { id: Date.now() - 5000, name: 'Grocery Shopping', amount: 125.50, category: 'Food', date: new Date().toLocaleDateString() },
+                    { id: Date.now() - 4000, name: 'Monthly Rent', amount: 1200.00, category: 'Rent', date: new Date().toLocaleDateString() },
+                    { id: Date.now() - 3000, name: 'New Laptop', amount: 899.99, category: 'Tech', date: new Date().toLocaleDateString() },
+                    { id: Date.now() - 2000, name: 'Uber Rides', amount: 45.75, category: 'Transport', date: new Date().toLocaleDateString() },
+                    { id: Date.now() - 1000, name: 'Netflix Subscription', amount: 15.99, category: 'Entertainment', date: new Date().toLocaleDateString() },
+                    { id: Date.now() - 500, name: 'Electric Bill', amount: 85.50, category: 'Utilities', date: new Date().toLocaleDateString() }
+                ];
+                expenses = sampleExpenses;
+                // Save sample expenses to Local Storage
+                saveExpenses();
+            }
+            
+            // Display the loaded expenses
+            renderExpenses();
+            updateTotal();
+            updateChart();
+        }
+
+        // Function to save expenses to Local Storage
+        function saveExpenses() {
+            // Convert array to JSON string and save to Local Storage
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+        }
+
+        // ============================================
+        // EXPENSE MANAGEMENT FUNCTIONS
+        // ============================================
+
+        // Function to add a new expense
+        function addExpense(name, amount, category) {
+            // Create a new expense object with unique ID and timestamp
+            const expense = {
+                id: Date.now(), // Use current timestamp as unique ID
+                name: name,
+                amount: parseFloat(amount), // Convert to number
+                category: category,
+                date: new Date().toLocaleDateString() // Store the date
+            };
+            
+            // Add to expenses array
+            expenses.push(expense);
+            
+            // Save to Local Storage
+            saveExpenses();
+            
+            // Update the display
+            renderExpenses();
+            updateTotal();
+            updateChart();
+        }
+
+        // Function to delete a single expense
+        function deleteExpense(id) {
+            // Filter out the expense with matching ID
+            expenses = expenses.filter(expense => expense.id !== id);
+            
+            // Save to Local Storage
+            saveExpenses();
+            
+            // Update the display
+            renderExpenses();
+            updateTotal();
+            updateChart();
+        }
+
+        // Function to clear all expenses
+        function clearAllExpenses() {
+            // Confirm with user before clearing
+            if (confirm('Are you sure you want to delete all expenses?')) {
+                // Clear the array
+                expenses = [];
+                
+                // Clear Local Storage
+                localStorage.removeItem('expenses');
+                
+                // Update the display
+                renderExpenses();
+                updateTotal();
+                updateChart();
+            }
+        }
+
+        // ============================================
+        // CALCULATION FUNCTION
+        // ============================================
+
+        // Function to calculate and display total spending
+        function updateTotal() {
+            // Calculate sum of all expense amounts
+            const total = expenses.reduce((sum, expense) => {
+                return sum + expense.amount;
+            }, 0); // Start with 0, then add each expense amount
+            
+            // Display the total with 2 decimal places
+            document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+            
+            // Enable/disable Clear All button based on whether there are expenses
+            document.getElementById('clearAllBtn').disabled = expenses.length === 0;
+        }
+
+        // ============================================
+        // CHART FUNCTION
+        // ============================================
+
+        // Function to update the pie chart with category spending
+        function updateChart() {
+            // Calculate spending per category
+            const categoryTotals = {};
+            
+            // Loop through all expenses and sum amounts by category
+            expenses.forEach(expense => {
+                if (categoryTotals[expense.category]) {
+                    categoryTotals[expense.category] += expense.amount;
+                } else {
+                    categoryTotals[expense.category] = expense.amount;
+                }
+            });
+            
+            // Get categories and amounts as arrays
+            const categories = Object.keys(categoryTotals);
+            const amounts = Object.values(categoryTotals);
+            
+            // Color mapping for categories (matching the expense cards)
+            const categoryColors = {
+                'Food': '#10b981',        // green-500
+                'Rent': '#a855f7',        // purple-500
+                'Tech': '#3b82f6',        // blue-500
+                'Transport': '#eab308',   // yellow-500
+                'Entertainment': '#ec4899', // pink-500
+                'Utilities': '#f97316',   // orange-500
+                'Other': '#6b7280'        // gray-500
+            };
+            
+            // Create color array for each category
+            const backgroundColors = categories.map(cat => categoryColors[cat] || '#6b7280');
+            
+            // Get the canvas element
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            // If chart already exists, destroy it before creating a new one
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+            
+            // Create new pie chart
+            categoryChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: categories, // Category names
+                    datasets: [{
+                        data: amounts, // Spending amounts
+                        backgroundColor: backgroundColors,
+                        borderColor: '#1f2937', // Dark gray border
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#d1d5db', // Light gray text
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                                }
+                            },
+                            backgroundColor: 'rgba(31, 41, 55, 0.9)', // Dark gray background
+                            titleColor: '#f3f4f6', // Light gray title
+                            bodyColor: '#f3f4f6', // Light gray body
+                            borderColor: '#4b5563',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================
+        // DISPLAY FUNCTIONS
+        // ============================================
+
+        // Function to render (display) all expenses
+        function renderExpenses() {
+            const expensesList = document.getElementById('expensesList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            
+            // Clear the current list
+            expensesList.innerHTML = '';
+            
+            // If no expenses, show empty message
+            if (expenses.length === 0) {
+                expensesList.innerHTML = '<p class="text-gray-400 text-center py-8" id="emptyMessage">No expenses yet. Add your first expense above!</p>';
+                return;
+            }
+            
+            // Hide empty message
+            emptyMessage.style.display = 'none';
+            
+            // Loop through each expense and create a card for it
+            expenses.forEach(expense => {
+                // Create a div element for each expense
+                const expenseCard = document.createElement('div');
+                expenseCard.className = 'bg-gray-700 rounded-lg p-4 border border-gray-600 flex justify-between items-center hover:bg-gray-650 transition duration-200';
+                
+                // Color code by category
+                const categoryColors = {
+                    'Food': 'bg-green-500',
+                    'Rent': 'bg-purple-500',
+                    'Tech': 'bg-blue-500',
+                    'Transport': 'bg-yellow-500',
+                    'Entertainment': 'bg-pink-500',
+                    'Utilities': 'bg-orange-500',
+                    'Other': 'bg-gray-500'
+                };
+                
+                const categoryColor = categoryColors[expense.category] || 'bg-gray-500';
+                
+                // Set the HTML content of the card
+                expenseCard.innerHTML = `
+                    <div class="flex items-center space-x-4 flex-1">
+                        <span class="${categoryColor} text-white text-xs font-semibold px-2 py-1 rounded">
+                            ${expense.category}
+                        </span>
+                        <div>
+                            <p class="font-semibold text-white">${expense.name}</p>
+                            <p class="text-sm text-gray-400">${expense.date}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-xl font-bold text-white">$${expense.amount.toFixed(2)}</span>
+                        <button 
+                            onclick="deleteExpense(${expense.id})"
+                            class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                            title="Delete expense"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                `;
+                
+                // Add the card to the list
+                expensesList.appendChild(expenseCard);
+            });
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        // Listen for form submission
+        document.getElementById('expenseForm').addEventListener('submit', function(event) {
+            // Prevent default form submission (which would reload the page)
+            event.preventDefault();
+            
+            // Get values from form inputs
+            const name = document.getElementById('expenseName').value.trim();
+            const amount = document.getElementById('amount').value;
+            const category = document.getElementById('category').value;
+            
+            // Validate inputs
+            if (!name || !amount || !category) {
+                alert('Please fill in all fields!');
+                return;
+            }
+            
+            // Add the expense
+            addExpense(name, amount, category);
+            
+            // Reset the form
+            document.getElementById('expenseForm').reset();
+            
+            // Focus back on the first input for better UX
+            document.getElementById('expenseName').focus();
+        });
+
+        // Listen for Clear All button click
+        document.getElementById('clearAllBtn').addEventListener('click', clearAllExpenses);
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        // When the page loads, load expenses from Local Storage
+        loadExpenses();
+    </script>
+</body>
+</html>
